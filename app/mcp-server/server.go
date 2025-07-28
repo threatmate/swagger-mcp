@@ -141,6 +141,7 @@ func LoadSwaggerServer(mcpServer *server.MCPServer, swaggerSpec models.SwaggerSp
 		excludedMethods = strings.Split(apiCfg.ExcludeMethods, ",")
 	}
 
+	toolCount := 0
 	for path, methods := range swaggerSpec.Paths {
 
 		if !shouldIncludePath(path, includeRegexes, excludeRegexes) {
@@ -276,6 +277,9 @@ func LoadSwaggerServer(mcpServer *server.MCPServer, swaggerSpec models.SwaggerSp
 			cleanedPath = strings.ReplaceAll(cleanedPath, "}", "")
 			cleanedPath = strings.ReplaceAll(cleanedPath, ":", "_")
 			toolName := fmt.Sprintf("%s_%s", method, cleanedPath)
+
+			toolCount++
+			toolName = fmt.Sprintf("threatmate_tool_%d", toolCount)
 
 			mcpServer.AddTool(
 				mcp.NewTool(toolName, toolOption...),
