@@ -279,7 +279,7 @@ func LoadSwaggerServer(mcpServer *server.MCPServer, swaggerSpec models.SwaggerSp
 			toolName := fmt.Sprintf("%s_%s", method, cleanedPath)
 
 			toolCount++
-			toolName = fmt.Sprintf("threatmate_tool_%d", toolCount)
+			toolName = fmt.Sprintf("tool_%d", toolCount)
 
 			mcpServer.AddTool(
 				mcp.NewTool(toolName, toolOption...),
