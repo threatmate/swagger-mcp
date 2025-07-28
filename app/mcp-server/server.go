@@ -129,6 +129,11 @@ func CreateServer(swaggerSpec models.SwaggerSpec, config models.Config) {
 	}
 }
 
+type Parameter struct {
+	SwaggerName string
+	MCPName     string
+}
+
 func LoadSwaggerServer(mcpServer *server.MCPServer, swaggerSpec models.SwaggerSpec, apiCfg models.ApiConfig) {
 	includeRegexes := compileRegexes(apiCfg.IncludePaths)
 	excludeRegexes := compileRegexes(apiCfg.ExcludePaths)
@@ -186,7 +191,7 @@ func LoadSwaggerServer(mcpServer *server.MCPServer, swaggerSpec models.SwaggerSp
 			reqMethod := fmt.Sprint(method)
 			reqBody := make(map[string]string)
 			reqPathParam := []string{}
-			reqQueryParam := []string{}
+			reqQueryParam := []Parameter{}
 			reqHeader := []string{}
 
 			for _, param := range details.Parameters {
@@ -207,20 +212,23 @@ func LoadSwaggerServer(mcpServer *server.MCPServer, swaggerSpec models.SwaggerSp
 				}
 			}
 			for _, param := range details.Parameters {
+				mcpName := param.Name
+				mcpName = strings.ReplaceAll(mcpName, "[", "")
+				mcpName = strings.ReplaceAll(mcpName, "]", "")
 				if param.In == "query" {
 					if param.Required {
 						toolOption = append(toolOption, mcp.WithString(
-							fmt.Sprint(param.Name),
-							mcp.Description(fmt.Sprintf("The data for %s", param.Name)),
+							fmt.Sprint(mcpName),
+							mcp.Description(fmt.Sprintf("The data for %s", mcpName)),
 							mcp.Required(),
 						))
 					} else {
 						toolOption = append(toolOption, mcp.WithString(
-							fmt.Sprint(param.Name),
-							mcp.Description(fmt.Sprintf("The data for %s", param.Name)),
+							fmt.Sprint(mcpName),
+							mcp.Description(fmt.Sprintf("The data for %s", mcpName)),
 						))
 					}
-					reqQueryParam = append(reqQueryParam, param.Name)
+					reqQueryParam = append(reqQueryParam, Parameter{SwaggerName: param.Name, MCPName: mcpName})
 				}
 			}
 
@@ -355,7 +363,7 @@ func setRequestSecurity(req *http.Request, security string, basicAuth string, ap
 
 func CreateMCPToolHandler(
 	reqPathParam []string,
-	reqQueryParam []string,
+	reqQueryParam []Parameter,
 	reqURL string,
 	reqBody map[string]string,
 	reqMethod string,
@@ -379,12 +387,12 @@ func CreateMCPToolHandler(
 				return mcp.NewToolResultError(fmt.Sprintf("[Error] failed to parse URL: %v", err)), nil
 			}
 			q := u.Query()
-			for _, name := range reqQueryParam {
-				val, ok := request.Params.Arguments[name].(string)
+			for _, parameter := range reqQueryParam {
+				val, ok := request.Params.Arguments[parameter.MCPName].(string)
 				if !ok {
-					return mcp.NewToolResultError(fmt.Sprintf("[Error] missing or invalid Query Parameter: %s", name)), nil
+					return mcp.NewToolResultError(fmt.Sprintf("[Error] missing or invalid Query Parameter: %s", parameter.MCPName)), nil
 				}
-				q.Set(name, val)
+				q.Set(parameter.SwaggerName, val)
 			}
 			u.RawQuery = q.Encode()
 			currentReqURL = u.String()
