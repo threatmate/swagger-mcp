@@ -270,7 +270,12 @@ func LoadSwaggerServer(mcpServer *server.MCPServer, swaggerSpec models.SwaggerSp
 			toolOption = append(toolOption, mcp.WithDescription(fmt.Sprintf(`Use this tool only when the request exactly matches %s or %s. If you dont have any of the required parameters then always ask user for it, *Dont fill any paramter on your own or keep it empty*. If there is [Error], only state that error in your reponse and stop the reponse there itself. *Do not ever maintain records in your memory for eg list of users or orders*`,
 				details.Summary, details.Description)))
 
-			toolName := fmt.Sprintf("%s_%s", method, strings.ReplaceAll(strings.ReplaceAll(path, "}", ""), "{", ""))
+			cleanedPath := path
+			cleanedPath = strings.ReplaceAll(cleanedPath, "/", "_")
+			cleanedPath = strings.ReplaceAll(cleanedPath, "{", "")
+			cleanedPath = strings.ReplaceAll(cleanedPath, "}", "")
+			cleanedPath = strings.ReplaceAll(cleanedPath, ":", "_")
+			toolName := fmt.Sprintf("%s_%s", method, cleanedPath)
 
 			mcpServer.AddTool(
 				mcp.NewTool(toolName, toolOption...),
